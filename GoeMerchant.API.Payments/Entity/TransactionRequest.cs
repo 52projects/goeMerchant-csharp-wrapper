@@ -87,6 +87,12 @@ namespace GoeMerchant.API.Payments.Entity {
         public string OrderID { get; set; }
 
         /// <summary>
+        /// The customer Identification Management
+        /// </summary>
+        [XmlIgnore]
+        public string CIMReferenceNumber { get; set; }
+
+        /// <summary>
         /// Amount in US dollars.
         /// </summary>
         [XmlIgnore]
@@ -133,6 +139,10 @@ namespace GoeMerchant.API.Payments.Entity {
 
                     this.Fields.Add(new Field("processor", this.Processor.ToDescription()));
                 }
+            }
+
+            if (!string.IsNullOrEmpty(this.CIMReferenceNumber)) {
+                this.Fields.Add(new Field("cim_ref_num", this.CIMReferenceNumber));
             }
 
             this.Fields.Add(new Field("order_id", this.OrderID));
