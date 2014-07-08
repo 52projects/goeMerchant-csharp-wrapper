@@ -33,8 +33,8 @@ namespace GoeMerchant.API.Payments.Entity {
         internal List<Field> ToFields() {
             var fields = new List<Field>();
 
-            fields.Add(new Field("aba", this.AccountNumber));
-            fields.Add(new Field("dda", this.RoutingNumber));
+            fields.Add(new Field("aba", this.RoutingNumber));
+            fields.Add(new Field("dda", this.AccountNumber));
             fields.Add(new Field("ach_account_type", this.AccountType.ToDescription()));
             fields.Add(new Field("ach_category_text", this.CategoryText));
             fields.Add(new Field("close_date", this.CloseDate.HasValue ? this.CloseDate.Value.ToString("MM/dd/yyyy") : DateTime.Now.ToString("MM/dd/tttt")));

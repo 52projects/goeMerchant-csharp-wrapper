@@ -156,10 +156,9 @@ namespace GoeMerchant.API.Payments.Entity {
                 this.Fields.AddRange(this.Check.ToFields());
             }
 
-            if (this.BillingAddress == null) {
-                throw new Exception("Billing address is required.");
+            if (this.BillingAddress != null) {
+                this.Fields.AddRange(this.BillingAddress.ToFields());
             }
-            this.Fields.AddRange(this.BillingAddress.ToFields());
 
             if (this.RecurringBilling != null) {
                 this.Fields.AddRange(this.RecurringBilling.ToFields(this.Check != null));
