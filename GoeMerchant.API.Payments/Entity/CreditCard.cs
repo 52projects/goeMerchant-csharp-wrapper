@@ -52,7 +52,10 @@ namespace GoeMerchant.API.Payments.Entity {
             fields.Add(new Field("card_number", this.CardNumber));
             fields.Add(new Field("card_exp", this.CardExpiration));
             fields.Add(new Field("cc_validate", this.ValidateOnly ? "1" : "0"));
-            fields.Add(new Field("close_date", this.CloseDate.HasValue ? this.CloseDate.Value.ToString("MM/dd/yyyy") : DateTime.Now.ToString("MM/dd/tttt")));
+
+            if (this.CloseDate.HasValue) {
+                fields.Add(new Field("close_date", this.CloseDate.Value.ToString()));
+            }
 
             return fields;
         }
