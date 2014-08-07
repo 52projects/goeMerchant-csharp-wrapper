@@ -171,7 +171,7 @@ namespace GoeMerchant.API.Payments.Entity {
             }
 
             if (this.CustomFields.Count > 0) {
-                this.Fields.Add(new Field("total_additioanl_fields", this.CustomFields.Count().ToString()));
+                this.Fields.Add(new Field("total_additional_fields", this.CustomFields.Count().ToString()));
                 for (int i = 1; i <= this.CustomFields.Count(); i++) {
                     this.Fields.Add(new Field("field_name" + i.ToString(), this.CustomFields[i-1].Key));
                     this.Fields.Add(new Field("field_value" + i.ToString(), this.CustomFields[i-1].Value));
