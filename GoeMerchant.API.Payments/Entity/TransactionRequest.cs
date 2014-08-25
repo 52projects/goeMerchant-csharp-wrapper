@@ -28,6 +28,7 @@ namespace GoeMerchant.API.Payments.Entity {
             this.Fields = new FieldCollection();
             this.LineItems = new List<LineItem>();
             this.CustomFields = new List<Field>();
+            this.CreditTransactions = new List<Field>();
 
             _transactionCenterID = transactionCenterID;
             _gatewayID = gatewayID;
@@ -119,6 +120,9 @@ namespace GoeMerchant.API.Payments.Entity {
         [XmlIgnore]
         public List<Field> CustomFields { get; set; }
 
+        [XmlIgnore]
+        public List<Field> CreditTransactions { get; set; }
+
         public string ToXml() {
             this.Fields = new FieldCollection();
             this.Fields.Add(new Field("transaction_center_id", this.TransactionCenterID));
@@ -141,41 +145,52 @@ namespace GoeMerchant.API.Payments.Entity {
                 }
             }
 
-            if (!string.IsNullOrEmpty(this.CIMReferenceNumber)) {
-                this.Fields.Add(new Field("cim_ref_num", this.CIMReferenceNumber));
+            if (this.OperationType == Enum.OperationType.ACHCredit || this.OperationType == Enum.OperationType.Credit) {
+                this.Fields.Add(new Field("total_number_transactions", this.CreditTransactions.Count.ToString()));
+
+                int count = 1;
+                foreach (var current in this.CreditTransactions) {
+                    this.Fields.Add(new Field("reference_number" + count, current.Key));
+                    this.Fields.Add(new Field("credit_amount" + count, current.Value.ToString()));
+                }
             }
+            else {
+                if (!string.IsNullOrEmpty(this.CIMReferenceNumber)) {
+                    this.Fields.Add(new Field("cim_ref_num", this.CIMReferenceNumber));
+                }
 
-            this.Fields.Add(new Field("order_id", this.OrderID));
-            this.Fields.Add(new Field("total", string.Format("{0:N2}", this.OrderTotal)));
+                this.Fields.Add(new Field("order_id", this.OrderID));
+                this.Fields.Add(new Field("total", string.Format("{0:N2}", this.OrderTotal)));
 
-            if (CreditCard != null) {
-                this.Fields.AddRange(this.CreditCard.ToFields());
-            }
+                if (CreditCard != null) {
+                    this.Fields.AddRange(this.CreditCard.ToFields());
+                }
 
-            if (Check != null) {
-                this.Fields.AddRange(this.Check.ToFields());
-            }
+                if (Check != null) {
+                    this.Fields.AddRange(this.Check.ToFields());
+                }
 
-            if (this.BillingAddress != null) {
-                this.Fields.AddRange(this.BillingAddress.ToFields());
-            }
+                if (this.BillingAddress != null) {
+                    this.Fields.AddRange(this.BillingAddress.ToFields());
+                }
 
-            if (this.RecurringBilling != null) {
-                this.Fields.AddRange(this.RecurringBilling.ToFields(this.Check != null));
-            }
+                if (this.RecurringBilling != null) {
+                    this.Fields.AddRange(this.RecurringBilling.ToFields(this.Check != null));
+                }
 
-            this.Fields.Add(new Field("remote_ip_address", this.RemoteIPAddress));
+                this.Fields.Add(new Field("remote_ip_address", this.RemoteIPAddress));
 
-            for (int i = 1; i <= this.LineItems.Count(); i++) {
-                this.Fields.AddRange(this.LineItems[i - 1].ToFields(i));
-            }
+                for (int i = 1; i <= this.LineItems.Count(); i++) {
+                    this.Fields.AddRange(this.LineItems[i - 1].ToFields(i));
+                }
 
-            if (this.CustomFields.Count > 0) {
-                this.Fields.Add(new Field("total_additional_fields", this.CustomFields.Count().ToString()));
-                for (int i = 1; i <= this.CustomFields.Count(); i++) {
-                    this.Fields.Add(new Field("field_name" + i.ToString(), this.CustomFields[i-1].Key));
-                    this.Fields.Add(new Field("field_value" + i.ToString(), this.CustomFields[i-1].Value));
-               }
+                if (this.CustomFields.Count > 0) {
+                    this.Fields.Add(new Field("total_additional_fields", this.CustomFields.Count().ToString()));
+                    for (int i = 1; i <= this.CustomFields.Count(); i++) {
+                        this.Fields.Add(new Field("field_name" + i.ToString(), this.CustomFields[i - 1].Key));
+                        this.Fields.Add(new Field("field_value" + i.ToString(), this.CustomFields[i - 1].Value));
+                    }
+                }
             }
 
             XmlSerializer xsSubmit = new XmlSerializer(typeof(TransactionRequest));
