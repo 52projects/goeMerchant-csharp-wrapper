@@ -71,7 +71,7 @@ namespace GoeMerchant.API.Payments.Entity {
         }
 
         [XmlIgnore]
-        public string ReferenceNumbr {
+        public string ReferenceNumber {
             get {
                 return Fields.GetFieldValue("reference_number");
             }

@@ -46,6 +46,7 @@
     <Compile Include="Entity\FieldCollection.cs" />
     <Compile Include="Entity\LineItem.cs" />
     <Compile Include="Entity\RecurringBilling.cs" />
+    <Compile Include="Entity\TransactionQuery.cs" />
     <Compile Include="Entity\TransactionRequest.cs" />
     <Compile Include="Entity\TransactionResponse.cs" />
     <Compile Include="Enum\ACHAccountType.cs" />
