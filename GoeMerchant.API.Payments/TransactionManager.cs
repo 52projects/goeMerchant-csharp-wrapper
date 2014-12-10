@@ -38,6 +38,7 @@ namespace GoeMerchant.API.Payments {
 
             HttpWebRequest webRequest = (HttpWebRequest)WebRequest.Create(url);
             webRequest.Method = "POST";
+            var xml = transaction.ToXml();
 
             byte[] transactionBytes = System.Text.Encoding.GetEncoding(1252).GetBytes(transaction.ToXml());
             webRequest.ContentLength = transactionBytes.Length;
