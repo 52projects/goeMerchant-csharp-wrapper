@@ -90,5 +90,15 @@ namespace GoeMerchant.API.Payments.Entity {
                 return Fields.GetFieldValue("error");
             }
         }
+
+        public string GetFieldValue(string key) {
+            var result = Fields.Fields.SingleOrDefault(x => x.Key == key);
+
+            if (result != null) {
+                return result.Value;
+            }
+
+            return string.Empty;
+        }
     }
 }

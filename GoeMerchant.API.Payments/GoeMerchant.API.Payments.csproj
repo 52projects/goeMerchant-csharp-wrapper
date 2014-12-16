@@ -39,12 +39,14 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Entity\ACHRejectResponse.cs" />
     <Compile Include="Entity\BillingAddress.cs" />
     <Compile Include="Entity\Check.cs" />
     <Compile Include="Entity\CreditCard.cs" />
     <Compile Include="Entity\Field.cs" />
     <Compile Include="Entity\FieldCollection.cs" />
     <Compile Include="Entity\LineItem.cs" />
+    <Compile Include="Entity\QueryResponse.cs" />
     <Compile Include="Entity\RecurringBilling.cs" />
     <Compile Include="Entity\TransactionQuery.cs" />
     <Compile Include="Entity\TransactionRequest.cs" />

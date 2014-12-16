@@ -8,6 +8,8 @@ using System.Net;
 using System.IO;
 using System.Xml;
 using System.Xml.Serialization;
+using System.Collections;
+using System.Xml.Linq;
 
 namespace GoeMerchant.API.Payments {
     public class TransactionManager {
@@ -33,7 +35,8 @@ namespace GoeMerchant.API.Payments {
             }
         }
 
-        public static TransactionResponse RequestData(TransactionQuery transaction) {
+        public static List<QueryResponse> RequestData(TransactionQuery transaction) {
+            var returnResponse = new List<QueryResponse>();
             string url = @"https://secure.goemerchant.com/secure/gateway/xmlgateway.aspx";
 
             HttpWebRequest webRequest = (HttpWebRequest)WebRequest.Create(url);
@@ -50,10 +53,114 @@ namespace GoeMerchant.API.Payments {
                 //Only for debug
                 using (var stream = new StreamReader(webResponse.GetResponseStream())) {
                     var response = stream.ReadToEnd();
+                    Hashtable hash = parseXML(response);
                     XmlSerializer serializer = new XmlSerializer(typeof(TransactionResponse));
-                    return (TransactionResponse)serializer.Deserialize(new StringReader(response));
+                    TransactionResponse transactionResponse = (TransactionResponse)serializer.Deserialize(new StringReader(response));
+
+                    var totalRecords = transactionResponse.Fields.Fields.Where(x => x.Key == "records_found").SingleOrDefault();
+
+                    if (totalRecords != null) {
+                        int records = 0;
+
+                        if (int.TryParse(totalRecords.Value, out records)) {
+                            for (int i = 1; i <= records; i++) {
+                                var queryResponse = new QueryResponse();
+                                queryResponse.OrderID = transactionResponse.GetFieldValue("order_id" + i);
+                                queryResponse.Amount = decimal.Parse(transactionResponse.GetFieldValue("amount" + i));
+                                queryResponse.AmountSetted = decimal.Parse(transactionResponse.GetFieldValue("amount_settled" + i));
+                                queryResponse.Settled = int.Parse(transactionResponse.GetFieldValue("settled" + i));
+                                queryResponse.TransactionTime = DateTime.Parse(transactionResponse.GetFieldValue("trans_time" + i));
+                                queryResponse.CardType = transactionResponse.GetFieldValue("card_type" + i);
+                                queryResponse.authResponse = transactionResponse.GetFieldValue("auth_response" + i);
+                                queryResponse.CreditVoid = transactionResponse.GetFieldValue("credit_void" + i);
+                                queryResponse.TransactionStatus = int.Parse(transactionResponse.GetFieldValue("trans_status" + i));
+
+                                foreach (string k in hash.Keys) {
+                                    if (k.Contains("field_name")) {
+                                        var number = k.Substring(10);
+
+                                        queryResponse.AdditionalFields.Add(new Field {
+                                            Key = hash[k].ToString(),
+                                            Value = hash["field_value" + number].ToString()
+                                        });
+                                    }
+                                }
+                                
+                                returnResponse.Add(queryResponse);
+                            }
+                        }
+                    }
+
+                    return returnResponse;
                 }
             }
+        }
+
+        /// <summary>
+        /// takes in raw xml string and attempts to parse it into a workable hash.
+        /// all valid xml for the gateway contains
+        /// <transaction><fields><field key="attribute name">value</field></fields></transaction>
+        /// there will be 1 or more (should always be more than 1 to be valid) field tags
+        /// this method will take the attribute name and make that the hash key and then the value is the value
+        /// if an error occurs then the error key will be added to the hash.
+        /// </summary>
+        /// <param name="xml"></param>
+        /// <returns></returns>
+        private static Hashtable parseXML(string xml) {
+            XmlDocument doc = new XmlDocument();
+            doc.LoadXml(xml);
+
+            Hashtable ret_hash = new Hashtable(); //stores key values to return
+            XmlTextReader txtreader = null;
+            XmlValidatingReader reader = null;
+            if (xml != null && xml.Length > 0) {
+                try {
+                    //Implement the readers.
+                    txtreader = new XmlTextReader(new System.IO.StringReader(xml));
+                    reader = new XmlValidatingReader(txtreader);
+                    //Parse the XML and display the text content of each of the elements.
+                    while (reader.Read()) {
+                        Console.WriteLine(reader.Value);
+                        if (reader.IsStartElement() && reader.Name.ToLower() == "field") {
+                            if (reader.HasAttributes) {
+                                if (reader.GetAttribute(0).ToLower().Contains("additional_fields")) {
+                                    XmlNode node = doc.DocumentElement.SelectSingleNode("//FIELD[@KEY='" + reader.GetAttribute(0).ToLower() + "']");
+
+                                    if (node.HasChildNodes) {
+                                        foreach (XmlNode current in node.ChildNodes) {
+                                            if (current.Attributes != null && current.Attributes.Count > 0) {
+                                                foreach (XmlAttribute attribute in current.Attributes) {
+                                                    if (attribute.Value.Contains("field_name") || attribute.Value.Contains("field_value")) {
+                                                        ret_hash[attribute.Value] = current.InnerText;
+                                                        break;
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                                else {
+                                    //we want the key attribute value
+                                    ret_hash[reader.GetAttribute(0).ToLower()] = reader.ReadString();
+                                }
+                            }
+                            else {
+                                ret_hash["error"] = "All FIELD tags must contains a KEY attribute.";
+                            }
+                        }
+                    } //ends while
+                }
+                catch (Exception e) {
+                    //handle exceptions
+                    ret_hash["error"] = e.Message;
+                }
+                finally {
+                    if (reader != null)
+                        reader.Close();
+                }
+            }
+
+            return ret_hash;
         }
     }
 }
