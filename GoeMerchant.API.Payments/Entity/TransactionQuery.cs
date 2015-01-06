@@ -136,6 +136,15 @@ namespace GoeMerchant.API.Payments.Entity {
                 this.Fields.Add(new Field("include_additional_fields", this.IncludeAdditionalFields ? "1" : ""));
             }
 
+            if (this.OperationType == Enum.OperationType.QueryRejects) {
+                this.Fields.Add(new Field("begin_date", this.BeginDate.ToString("MMddyy")));
+                this.Fields.Add(new Field("end_date", this.EndDate.ToString("MMddyy")));
+                this.Fields.Add(new Field("low_amount", this.LowAmount.HasValue ? this.LowAmount.Value.ToString() : ""));
+                this.Fields.Add(new Field("high_amount", this.HighAmount.HasValue ? this.HighAmount.Value.ToString() : ""));
+                this.Fields.Add(new Field("order_id", this.OrderID));
+                this.Fields.Add(new Field("include_additional_fields", this.IncludeAdditionalFields ? "1" : ""));
+            }
+
             XmlSerializer xsSubmit = new XmlSerializer(typeof(TransactionQuery));
             StringWriter sww = new StringWriter();
             XmlWriter writer = XmlWriter.Create(sww);
