@@ -124,15 +124,22 @@ namespace GoeMerchant.API.Payments.Entity {
 
             if (this.OperationType == Enum.OperationType.Query) {
                 this.Fields.Add(new Field("trans_action", this.Transaction));
-                this.Fields.Add(new Field("card_type", this.CardType.HasValue ? this.CardType.ToDescription() : ""));
                 this.Fields.Add(new Field("trans_type", this.TransactionType.HasValue ? this.TransactionType.ToDescription() : ""));
                 this.Fields.Add(new Field("trans_status", this.TransactionStatus.HasValue ? this.TransactionStatus.Value.ToString() : ""));
                 this.Fields.Add(new Field("begin_date", this.BeginDate.ToString("MMddyy")));
                 this.Fields.Add(new Field("end_date", this.EndDate.ToString("MMddyy")));
                 this.Fields.Add(new Field("low_amount", this.LowAmount.HasValue ? this.LowAmount.Value.ToString() : ""));
                 this.Fields.Add(new Field("high_amount", this.HighAmount.HasValue ? this.HighAmount.Value.ToString() : ""));
-                this.Fields.Add(new Field("order_id", this.OrderID));
-                this.Fields.Add(new Field("card_number", this.CardNumber));
+
+                if (!string.IsNullOrEmpty(this.OrderID)) {
+                    this.Fields.Add(new Field("order_id", this.OrderID));
+                }
+
+                if (this.Transaction == "CC") {
+                    this.Fields.Add(new Field("card_number", this.CardNumber));
+                    this.Fields.Add(new Field("card_type", this.CardType.HasValue ? this.CardType.ToDescription() : ""));
+                }
+
                 this.Fields.Add(new Field("include_additional_fields", this.IncludeAdditionalFields ? "1" : ""));
             }
 

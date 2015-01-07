@@ -43,6 +43,8 @@ namespace GoeMerchant.API.Payments.Enum {
         [Description("query_ach_rejects")]
         QueryRejects = 20,
         [Description("RECURRING_MODIFY")]
-        RecurringModiy = 10
+        RecurringModiy = 21,
+        [Description("ALL")]
+        ALL = 22
     }
 }
