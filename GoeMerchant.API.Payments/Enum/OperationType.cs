@@ -46,5 +46,6 @@ namespace GoeMerchant.API.Payments.Enum {
         RecurringModiy = 21,
         [Description("ALL")]
         ALL = 22
+
     }
 }
