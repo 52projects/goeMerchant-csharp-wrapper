@@ -45,7 +45,9 @@ namespace GoeMerchant.API.Payments.Enum {
         [Description("RECURRING_MODIFY")]
         RecurringModiy = 21,
         [Description("ALL")]
-        ALL = 22
+        ALL = 22,
+        [Description("CIM_INSERT")]
+        CIMInsert = 23
 
     }
 }
