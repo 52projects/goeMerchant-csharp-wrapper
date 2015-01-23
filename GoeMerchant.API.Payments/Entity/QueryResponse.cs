@@ -41,6 +41,11 @@ namespace GoeMerchant.API.Payments.Entity {
 
         public List<Field> AdditionalFields { get; set; }
 
+        public string ReturnCode { get; set; }
+
+        public DateTime RejectDate { get; set; }
+
+        public string Description { get; set; }
 
     }
 }

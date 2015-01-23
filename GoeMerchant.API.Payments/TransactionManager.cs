@@ -53,7 +53,7 @@ namespace GoeMerchant.API.Payments {
                 //Only for debug
                 using (var stream = new StreamReader(webResponse.GetResponseStream())) {
                     var response = stream.ReadToEnd();
-                    Hashtable hash = parseXML(response);
+                    Hashtable hash = parseXML(response, 0);
                     XmlSerializer serializer = new XmlSerializer(typeof(TransactionResponse));
                     TransactionResponse transactionResponse = (TransactionResponse)serializer.Deserialize(new StringReader(response));
 
@@ -66,22 +66,28 @@ namespace GoeMerchant.API.Payments {
                             for (int i = 1; i <= records; i++) {
                                 var queryResponse = new QueryResponse();
                                 queryResponse.OrderID = transactionResponse.GetFieldValue("order_id" + i);
-                                queryResponse.Amount = decimal.Parse(transactionResponse.GetFieldValue("amount" + i));
-                                queryResponse.AmountSetted = decimal.Parse(transactionResponse.GetFieldValue("amount_settled" + i));
-                                queryResponse.Settled = int.Parse(transactionResponse.GetFieldValue("settled" + i));
-                                queryResponse.TransactionTime = DateTime.Parse(transactionResponse.GetFieldValue("trans_time" + i));
+                                queryResponse.Amount = transactionResponse.GetDecimalFieldValue("amount" + i);
+                                queryResponse.AmountSetted = transactionResponse.GetDecimalFieldValue("amount_settled" + i);
+                                queryResponse.Settled = transactionResponse.GetIntegerFieldValue("settled" + i);
+                                queryResponse.TransactionTime = transactionResponse.GetDateTimeFieldValue("trans_time" + i);
                                 queryResponse.CardType = transactionResponse.GetFieldValue("card_type" + i);
                                 queryResponse.authResponse = transactionResponse.GetFieldValue("auth_response" + i);
                                 queryResponse.CreditVoid = transactionResponse.GetFieldValue("credit_void" + i);
-                                queryResponse.TransactionStatus = int.Parse(transactionResponse.GetFieldValue("trans_status" + i));
+                                queryResponse.TransactionStatus = transactionResponse.GetIntegerFieldValue("trans_status" + i);
+                                queryResponse.ReferenceNumber = transactionResponse.GetFieldValue("reference_number" + i);
+                                queryResponse.RejectDate = transactionResponse.GetDateTimeFieldValue("reject_date" + i);
+                                queryResponse.Description = transactionResponse.GetFieldValue("description" + i);
+                                queryResponse.ReturnCode = transactionResponse.GetFieldValue("return_code" + i);
 
-                                foreach (string k in hash.Keys) {
+                                var hashes = parseXML(response, i);
+
+                                foreach (string k in hashes.Keys) {
                                     if (k.Contains("field_name")) {
                                         var number = k.Substring(10);
 
                                         queryResponse.AdditionalFields.Add(new Field {
-                                            Key = hash[k].ToString(),
-                                            Value = hash["field_value" + number].ToString()
+                                            Key = hashes[k].ToString(),
+                                            Value = hashes["field_value" + number].ToString()
                                         });
                                     }
                                 }
@@ -106,7 +112,7 @@ namespace GoeMerchant.API.Payments {
         /// </summary>
         /// <param name="xml"></param>
         /// <returns></returns>
-        private static Hashtable parseXML(string xml) {
+        private static Hashtable parseXML(string xml, int number) {
             XmlDocument doc = new XmlDocument();
             doc.LoadXml(xml);
 
@@ -123,7 +129,7 @@ namespace GoeMerchant.API.Payments {
                         Console.WriteLine(reader.Value);
                         if (reader.IsStartElement() && reader.Name.ToLower() == "field") {
                             if (reader.HasAttributes) {
-                                if (reader.GetAttribute(0).ToLower().Contains("additional_fields")) {
+                                if (reader.GetAttribute(0).ToLower().Contains("additional_fields" + number)) {
                                     XmlNode node = doc.DocumentElement.SelectSingleNode("//FIELD[@KEY='" + reader.GetAttribute(0).ToLower() + "']");
 
                                     if (node.HasChildNodes) {
@@ -141,7 +147,7 @@ namespace GoeMerchant.API.Payments {
                                 }
                                 else {
                                     //we want the key attribute value
-                                    ret_hash[reader.GetAttribute(0).ToLower()] = reader.ReadString();
+                                    //ret_hash[reader.GetAttribute(0).ToLower()] = reader.ReadString();
                                 }
                             }
                             else {

@@ -100,5 +100,29 @@ namespace GoeMerchant.API.Payments.Entity {
 
             return string.Empty;
         }
+
+        public DateTime GetDateTimeFieldValue(string key) {
+            var date = DateTime.MinValue;
+            var results = GetFieldValue(key);
+
+            DateTime.TryParse(results, out date);
+            return date;
+        }
+
+        public int GetIntegerFieldValue(string key) {
+            var value = int.MinValue;
+            var results = GetFieldValue(key);
+
+            int.TryParse(results, out value);
+            return value;
+        }
+
+        public decimal GetDecimalFieldValue(string key) {
+            var value = decimal.MinValue;
+            var results = GetFieldValue(key);
+
+            decimal.TryParse(results, out value);
+            return value;
+        }
     }
 }
