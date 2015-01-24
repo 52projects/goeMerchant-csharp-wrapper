@@ -68,7 +68,7 @@ namespace GoeMerchant.API.Payments {
                                 queryResponse.OrderID = transactionResponse.GetFieldValue("order_id" + i);
                                 queryResponse.Amount = transactionResponse.GetDecimalFieldValue("amount" + i);
                                 queryResponse.AmountSetted = transactionResponse.GetDecimalFieldValue("amount_settled" + i);
-                                queryResponse.Settled = transactionResponse.GetIntegerFieldValue("settled" + i);
+                                queryResponse.Settled = transactionResponse.GetFieldValue("auth_response" + i) == "Settled" ? 1 : 0;
                                 queryResponse.TransactionTime = transactionResponse.GetDateTimeFieldValue("trans_time" + i);
                                 queryResponse.CardType = transactionResponse.GetFieldValue("card_type" + i);
                                 queryResponse.authResponse = transactionResponse.GetFieldValue("auth_response" + i);
