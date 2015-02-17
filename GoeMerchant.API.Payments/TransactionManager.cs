@@ -53,7 +53,6 @@ namespace GoeMerchant.API.Payments {
                 //Only for debug
                 using (var stream = new StreamReader(webResponse.GetResponseStream())) {
                     var response = stream.ReadToEnd();
-                    Hashtable hash = parseXML(response, 0);
                     XmlSerializer serializer = new XmlSerializer(typeof(TransactionResponse));
                     TransactionResponse transactionResponse = (TransactionResponse)serializer.Deserialize(new StringReader(response));
 
