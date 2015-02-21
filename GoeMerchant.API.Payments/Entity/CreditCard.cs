@@ -31,7 +31,7 @@ namespace GoeMerchant.API.Payments.Entity {
         /// Credit card security code, cvv2, cvc, cid
         /// </summary>
         [XmlIgnore]
-        public int CVV2 { get; set; }
+        public string CVV2 { get; set; }
 
         /// <summary>
         /// Set to true for doing small pre authorizations to determine a vlid card, AVS or CVV2. The transaction will be immediately voided.
@@ -52,6 +52,10 @@ namespace GoeMerchant.API.Payments.Entity {
             fields.Add(new Field("card_number", this.CardNumber));
             fields.Add(new Field("card_exp", this.CardExpiration));
             fields.Add(new Field("cc_validate", this.ValidateOnly ? "1" : "0"));
+
+            if (!string.IsNullOrEmpty(this.CVV2)) {
+                fields.Add(new Field("cvv2", this.CVV2));
+            }
 
             if (this.CloseDate.HasValue) {
                 fields.Add(new Field("close_date", this.CloseDate.Value.ToString()));
