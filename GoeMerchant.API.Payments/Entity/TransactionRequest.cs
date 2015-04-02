@@ -109,6 +109,9 @@ namespace GoeMerchant.API.Payments.Entity {
         public Check Check { get; set; }
 
         [XmlIgnore]
+        public CIMCheck CIMCheck { get; set; }
+
+        [XmlIgnore]
         public RecurringBilling RecurringBilling { get; set; }
 
         [XmlIgnore]
@@ -168,6 +171,10 @@ namespace GoeMerchant.API.Payments.Entity {
 
                 if (Check != null) {
                     this.Fields.AddRange(this.Check.ToFields());
+                }
+
+                if (CIMCheck != null) {
+                    this.Fields.AddRange(this.CIMCheck.ToFields());
                 }
 
                 if (this.BillingAddress != null) {
