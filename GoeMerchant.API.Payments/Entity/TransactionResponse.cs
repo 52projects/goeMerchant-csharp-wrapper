@@ -35,6 +35,13 @@ namespace GoeMerchant.API.Payments.Entity {
         }
 
         [XmlIgnore]
+        public string Response {
+            get {
+                return Fields.GetFieldValue("response");
+            }
+        }
+
+        [XmlIgnore]
         public string AuthCode {
             get {
                 return Fields.GetFieldValue("auth_code");
@@ -85,6 +92,20 @@ namespace GoeMerchant.API.Payments.Entity {
         }
 
         [XmlIgnore]
+       public decimal? CreditAmount {
+            get {
+                decimal amount = 0;
+                var value = Fields.GetFieldValue("credit_amount");
+
+                if (!string.IsNullOrEmpty(value)) {
+                    decimal.TryParse(value, out amount);
+                }
+
+                return amount;
+            }
+        }
+
+        [XmlIgnore]
         public string ErrorMessage {
             get {
                 return Fields.GetFieldValue("error");
@@ -123,6 +144,10 @@ namespace GoeMerchant.API.Payments.Entity {
 
             decimal.TryParse(results, out value);
             return value;
+        }
+
+        public bool HasField(string key) {
+            return Fields.Fields.FirstOrDefault(x => x.Key == key) != null;
         }
     }
 }

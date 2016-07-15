@@ -30,7 +30,32 @@ namespace GoeMerchant.API.Payments {
                 using (var stream = new StreamReader(webResponse.GetResponseStream())) {
                     var response = stream.ReadToEnd();
                     XmlSerializer serializer = new XmlSerializer(typeof(TransactionResponse));
-                    return (TransactionResponse)serializer.Deserialize(new StringReader(response));
+                    TransactionResponse transactionResponse = (TransactionResponse)serializer.Deserialize(new StringReader(response));
+
+                    // A return currently only one transaction is returned at a time
+                    if (transactionResponse.Fields.Fields.FirstOrDefault(x => x.Key == "total_transactions_credited") != null) {
+                        if (!transactionResponse.HasField("status")) {
+                            transactionResponse.Fields.Add(new Field("status", transactionResponse.GetFieldValue("status1")));
+                        }
+
+                        if (!transactionResponse.HasField("response")) {
+                            transactionResponse.Fields.Add(new Field("response", transactionResponse.GetFieldValue("response1")));
+                        }
+
+                        if (!transactionResponse.HasField("reference_number")) {
+                            transactionResponse.Fields.Add(new Field("reference_number", transactionResponse.GetFieldValue("reference_number1")));
+                        }
+
+                        if (!transactionResponse.HasField("credit_amount")) {
+                            transactionResponse.Fields.Add(new Field("credit_amount", transactionResponse.GetFieldValue("credit_amount1")));
+                        }
+
+                        if (!transactionResponse.HasField("error")) {
+                            transactionResponse.Fields.Add(new Field("error", transactionResponse.GetFieldValue("error1")));
+                        }
+                    }
+
+                    return transactionResponse;
                 }
             }
         }
@@ -66,6 +91,7 @@ namespace GoeMerchant.API.Payments {
                                 var queryResponse = new QueryResponse();
                                 queryResponse.OrderID = transactionResponse.GetFieldValue("order_id" + i);
                                 queryResponse.Amount = transactionResponse.GetDecimalFieldValue("amount" + i);
+                                queryResponse.AmountCredited = transactionResponse.GetDecimalFieldValue("amount_credited" + i);
                                 queryResponse.AmountSetted = transactionResponse.GetDecimalFieldValue("amount_settled" + i);
                                 queryResponse.Settled = transactionResponse.GetFieldValue("auth_response" + i) == "Settled" ? 1 : 0;
                                 queryResponse.TransactionTime = transactionResponse.GetDateTimeFieldValue("trans_time" + i);
