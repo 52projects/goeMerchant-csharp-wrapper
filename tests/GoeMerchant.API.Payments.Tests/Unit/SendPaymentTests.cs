@@ -14,7 +14,7 @@ namespace GoeMerchants.API.Payments.Tests.Unit {
         private string _gatewayID = string.Empty;
         private int _processorID = 0;
 
-        [TestFixtureSetUp]
+        [OneTimeSetUp]
         public void Setup() {
             _transactionCenterID = ConfigurationManager.AppSettings["Transaction.Center.ID"];
             _gatewayID = ConfigurationManager.AppSettings["Gateway.ID"];
