@@ -10,122 +10,108 @@ using System.Xml;
 using System.Xml.Serialization;
 using System.Collections;
 using System.Xml.Linq;
+using System.Net.Http;
+using System;
+using System.Collections.Generic;
+using System.Text;
+using System.Net.Http;
+using System.Net.Http.Headers;
+using System.Threading.Tasks;
 
 namespace GoeMerchant.API.Payments {
     public class TransactionManager {
-        public static TransactionResponse RequestPayment(TransactionRequest transaction) {
-            string url = @"https://secure.goemerchant.com/secure/gateway/xmlgateway.aspx";
+        public static async Task<TransactionResponse> RequestPayment(TransactionRequest transaction) {
+            using (var client = new HttpClient()) {
+                var httpContent = new StringContent(transaction.ToXml(), Encoding.UTF8, "application/xml");
 
-            HttpWebRequest webRequest = (HttpWebRequest)WebRequest.Create(url);
-            webRequest.Method = "POST";
+                var result = await client.PostAsync("https://secure.goemerchant.com/secure/gateway/xmlgateway.aspx", httpContent);
+                string resultContent = await result.Content.ReadAsStringAsync();
 
-            byte[] transactionBytes = System.Text.Encoding.GetEncoding(1252).GetBytes(transaction.ToXml());
-            webRequest.ContentLength = transactionBytes.Length;
+                XmlSerializer serializer = new XmlSerializer(typeof(TransactionResponse));
+                TransactionResponse transactionResponse = (TransactionResponse)serializer.Deserialize(new StringReader(resultContent));
 
-            using (Stream writer = webRequest.GetRequestStream())
-                writer.Write(transactionBytes, 0, transactionBytes.Length);
-
-            using (HttpWebResponse webResponse = (HttpWebResponse)webRequest.GetResponse()) {
-                //Only for debug
-                using (var stream = new StreamReader(webResponse.GetResponseStream())) {
-                    var response = stream.ReadToEnd();
-                    XmlSerializer serializer = new XmlSerializer(typeof(TransactionResponse));
-                    TransactionResponse transactionResponse = (TransactionResponse)serializer.Deserialize(new StringReader(response));
-
-                    // A return currently only one transaction is returned at a time
-                    if (transactionResponse.Fields.Fields.FirstOrDefault(x => x.Key == "total_transactions_credited") != null) {
-                        if (!transactionResponse.HasField("status")) {
-                            transactionResponse.Fields.Add(new Field("status", transactionResponse.GetFieldValue("status1")));
-                        }
-
-                        if (!transactionResponse.HasField("response")) {
-                            transactionResponse.Fields.Add(new Field("response", transactionResponse.GetFieldValue("response1")));
-                        }
-
-                        if (!transactionResponse.HasField("reference_number")) {
-                            transactionResponse.Fields.Add(new Field("reference_number", transactionResponse.GetFieldValue("reference_number1")));
-                        }
-
-                        if (!transactionResponse.HasField("credit_amount")) {
-                            transactionResponse.Fields.Add(new Field("credit_amount", transactionResponse.GetFieldValue("credit_amount1")));
-                        }
-
-                        if (!transactionResponse.HasField("error")) {
-                            transactionResponse.Fields.Add(new Field("error", transactionResponse.GetFieldValue("error1")));
-                        }
+                // A return currently only one transaction is returned at a time
+                if (transactionResponse.Fields.Fields.FirstOrDefault(x => x.Key == "total_transactions_credited") != null) {
+                    if (!transactionResponse.HasField("status")) {
+                        transactionResponse.Fields.Add(new Field("status", transactionResponse.GetFieldValue("status1")));
                     }
 
-                    return transactionResponse;
+                    if (!transactionResponse.HasField("response")) {
+                        transactionResponse.Fields.Add(new Field("response", transactionResponse.GetFieldValue("response1")));
+                    }
+
+                    if (!transactionResponse.HasField("reference_number")) {
+                        transactionResponse.Fields.Add(new Field("reference_number", transactionResponse.GetFieldValue("reference_number1")));
+                    }
+
+                    if (!transactionResponse.HasField("credit_amount")) {
+                        transactionResponse.Fields.Add(new Field("credit_amount", transactionResponse.GetFieldValue("credit_amount1")));
+                    }
+
+                    if (!transactionResponse.HasField("error")) {
+                        transactionResponse.Fields.Add(new Field("error", transactionResponse.GetFieldValue("error1")));
+                    }
                 }
+
+                return transactionResponse;
             }
         }
 
-        public static List<QueryResponse> RequestData(TransactionQuery transaction) {
+        public static async Task<List<QueryResponse>> RequestData(TransactionQuery transaction) {
             var returnResponse = new List<QueryResponse>();
-            string url = @"https://secure.goemerchant.com/secure/gateway/xmlgateway.aspx";
+            using (var client = new HttpClient()) {
+                var httpContent = new StringContent(transaction.ToXml(), Encoding.UTF8, "application/xml");
 
-            HttpWebRequest webRequest = (HttpWebRequest)WebRequest.Create(url);
-            webRequest.Method = "POST";
-            var xml = transaction.ToXml();
+                var result = await client.PostAsync("https://secure.goemerchant.com/secure/gateway/xmlgateway.aspx", httpContent);
+                string resultContent = await result.Content.ReadAsStringAsync();
 
-            byte[] transactionBytes = System.Text.Encoding.GetEncoding(1252).GetBytes(transaction.ToXml());
-            webRequest.ContentLength = transactionBytes.Length;
+                XmlSerializer serializer = new XmlSerializer(typeof(TransactionResponse));
+                TransactionResponse transactionResponse = (TransactionResponse)serializer.Deserialize(new StringReader(resultContent));
 
-            using (Stream writer = webRequest.GetRequestStream())
-                writer.Write(transactionBytes, 0, transactionBytes.Length);
+                var totalRecords = transactionResponse.Fields.Fields.Where(x => x.Key == "records_found").SingleOrDefault();
 
-            using (HttpWebResponse webResponse = (HttpWebResponse)webRequest.GetResponse()) {
-                //Only for debug
-                using (var stream = new StreamReader(webResponse.GetResponseStream())) {
-                    var response = stream.ReadToEnd();
-                    XmlSerializer serializer = new XmlSerializer(typeof(TransactionResponse));
-                    TransactionResponse transactionResponse = (TransactionResponse)serializer.Deserialize(new StringReader(response));
+                if (totalRecords != null) {
+                    int records = 0;
 
-                    var totalRecords = transactionResponse.Fields.Fields.Where(x => x.Key == "records_found").SingleOrDefault();
+                    if (int.TryParse(totalRecords.Value, out records)) {
+                        for (int i = 1; i <= records; i++) {
+                            var queryResponse = new QueryResponse();
+                            queryResponse.OrderID = transactionResponse.GetFieldValue("order_id" + i);
+                            queryResponse.Amount = transactionResponse.GetDecimalFieldValue("amount" + i);
+                            queryResponse.AmountCredited = transactionResponse.GetDecimalFieldValue("amount_credited" + i);
+                            queryResponse.AmountSetted = transactionResponse.GetDecimalFieldValue("amount_settled" + i);
+                            queryResponse.Settled = transactionResponse.GetFieldValue("auth_response" + i) == "Settled" ? 1 : 0;
+                            queryResponse.TransactionTime = transactionResponse.GetDateTimeFieldValue("trans_time" + i);
+                            queryResponse.CardType = transactionResponse.GetFieldValue("card_type" + i);
+                            queryResponse.authResponse = transactionResponse.GetFieldValue("auth_response" + i);
+                            queryResponse.CreditVoid = transactionResponse.GetFieldValue("credit_void" + i);
+                            queryResponse.TransactionStatus = transactionResponse.GetIntegerFieldValue("trans_status" + i);
+                            queryResponse.ReferenceNumber = transactionResponse.GetFieldValue("reference_number" + i);
+                            queryResponse.RejectDate = transactionResponse.GetDateTimeFieldValue("reject_date" + i);
+                            queryResponse.Description = transactionResponse.GetFieldValue("description" + i);
+                            queryResponse.ReturnCode = transactionResponse.GetFieldValue("return_code" + i);
 
-                    if (totalRecords != null) {
-                        int records = 0;
+                            var hashes = parseXML(resultContent, i);
 
-                        if (int.TryParse(totalRecords.Value, out records)) {
-                            for (int i = 1; i <= records; i++) {
-                                var queryResponse = new QueryResponse();
-                                queryResponse.OrderID = transactionResponse.GetFieldValue("order_id" + i);
-                                queryResponse.Amount = transactionResponse.GetDecimalFieldValue("amount" + i);
-                                queryResponse.AmountCredited = transactionResponse.GetDecimalFieldValue("amount_credited" + i);
-                                queryResponse.AmountSetted = transactionResponse.GetDecimalFieldValue("amount_settled" + i);
-                                queryResponse.Settled = transactionResponse.GetFieldValue("auth_response" + i) == "Settled" ? 1 : 0;
-                                queryResponse.TransactionTime = transactionResponse.GetDateTimeFieldValue("trans_time" + i);
-                                queryResponse.CardType = transactionResponse.GetFieldValue("card_type" + i);
-                                queryResponse.authResponse = transactionResponse.GetFieldValue("auth_response" + i);
-                                queryResponse.CreditVoid = transactionResponse.GetFieldValue("credit_void" + i);
-                                queryResponse.TransactionStatus = transactionResponse.GetIntegerFieldValue("trans_status" + i);
-                                queryResponse.ReferenceNumber = transactionResponse.GetFieldValue("reference_number" + i);
-                                queryResponse.RejectDate = transactionResponse.GetDateTimeFieldValue("reject_date" + i);
-                                queryResponse.Description = transactionResponse.GetFieldValue("description" + i);
-                                queryResponse.ReturnCode = transactionResponse.GetFieldValue("return_code" + i);
+                            foreach (string k in hashes.Keys) {
+                                if (k.Contains("field_name")) {
+                                    var number = k.Substring(10);
 
-                                var hashes = parseXML(response, i);
-
-                                foreach (string k in hashes.Keys) {
-                                    if (k.Contains("field_name")) {
-                                        var number = k.Substring(10);
-
-                                        queryResponse.AdditionalFields.Add(new Field {
-                                            Key = hashes[k].ToString(),
-                                            Value = hashes["field_value" + number].ToString()
-                                        });
-                                    }
+                                    queryResponse.AdditionalFields.Add(new Field {
+                                        Key = hashes[k].ToString(),
+                                        Value = hashes["field_value" + number].ToString()
+                                    });
                                 }
-                                
-                                returnResponse.Add(queryResponse);
                             }
+
+                            returnResponse.Add(queryResponse);
                         }
                     }
-
-                    return returnResponse;
                 }
             }
+            return returnResponse;
         }
+       
 
         /// <summary>
         /// takes in raw xml string and attempts to parse it into a workable hash.

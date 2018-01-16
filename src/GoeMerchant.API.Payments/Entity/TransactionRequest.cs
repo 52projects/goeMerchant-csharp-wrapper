@@ -148,13 +148,15 @@ namespace GoeMerchant.API.Payments.Entity {
                 }
             }
 
-            if (this.OperationType == Enum.OperationType.ACHCredit || this.OperationType == Enum.OperationType.Credit) {
+            if (this.OperationType == Enum.OperationType.ACHCredit || this.OperationType == Enum.OperationType.Credit || this.OperationType == Enum.OperationType.Void || this.OperationType == Enum.OperationType.ACHVoid) {
                 this.Fields.Add(new Field("total_number_transactions", this.CreditTransactions.Count.ToString()));
 
                 int count = 1;
                 foreach (var current in this.CreditTransactions) {
                     this.Fields.Add(new Field("reference_number" + count, current.Key));
-                    this.Fields.Add(new Field("credit_amount" + count, current.Value.ToString()));
+                    if (this.OperationType == Enum.OperationType.ACHCredit || this.OperationType == Enum.OperationType.Credit) {
+                        this.Fields.Add(new Field("credit_amount" + count, current.Value.ToString()));
+                    }
                 }
             }
             else {

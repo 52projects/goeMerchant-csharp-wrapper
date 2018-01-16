@@ -58,7 +58,7 @@ namespace GoeMerchant.API.Payments.Entity {
             }
 
             if (this.CloseDate.HasValue) {
-                fields.Add(new Field("close_date", this.CloseDate.Value.ToString()));
+                fields.Add(new Field("close_date", this.CloseDate.Value.ToString("MM/dd/yyyy")));
             }
 
             return fields;

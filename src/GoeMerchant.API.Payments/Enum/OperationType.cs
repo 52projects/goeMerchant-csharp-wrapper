@@ -47,7 +47,8 @@ namespace GoeMerchant.API.Payments.Enum {
         [Description("ALL")]
         ALL = 22,
         [Description("CIM_INSERT")]
-        CIMInsert = 23
-
+        CIMInsert = 23,
+        [Description("ACH_VOID")]
+        ACHVoid = 24
     }
 }
